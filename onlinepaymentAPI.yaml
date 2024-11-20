@@ -1,0 +1,100 @@
+openapi: 3.0.0
+info:
+  title: Payment API
+  version: v1
+  description: API for processing customer payments for orders.
+
+paths:
+  /orders/{order_id}/payments:
+    post:
+      summary: Process payment for an order
+      description: Processes a payment for a specific order using the chosen payment method.
+      parameters:
+        - in: path
+          name: order_id
+          schema:
+            type: string
+          required: true
+          description: The unique identifier of the order.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        '201':
+          description: Payment processed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Bad request, invalid payment information.
+        '404':
+          description: Order not found.
+        '500':
+          description: Internal server error during payment processing.
+
+
+components:
+  schemas:
+    PaymentRequest:
+      type: object
+      required:
+        - payment_method
+        - amount
+      properties:
+        payment_method:
+          type: string
+          description: The chosen payment method (e.g., "credit_card", "paypal", "google_pay").
+          enum: ["credit_card", "paypal", "google_pay", "apple_pay"]
+        amount:
+          type: number
+          format: float
+          description: The amount to be paid.
+        card_details:
+          type: object
+          description: Credit card details (required if payment_method is "credit_card").
+          properties:
+            card_number:
+              type: string
+              format:
+                pattern: "^[0-9]{13,19}$"  # Basic card number validation, adjust as needed.
+            expiry_month:
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 12
+            expiry_year:
+              type: integer
+              format: int32
+              minimum: 2000 # Adjust as needed
+            cvv:
+              type: string
+        paypal_details:
+          type: object
+          description: PayPal details (required if payment_method is "paypal").
+          properties:
+            paypal_account:
+              type: string
+        google_pay_token:
+          type: string
+          description: Google Pay token (required if payment_method is "google_pay").
+        apple_pay_token:
+          type: string
+          description: Apple Pay token (required if payment_method is "apple_pay").
+
+
+    PaymentResponse:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          description: The unique identifier of the processed payment.
+        status:
+          type: string
+          description: The status of the payment (e.g., "success", "pending", "failed").
+        order_id:
+          type: string
+          description: The ID of the order the payment was applied to.
